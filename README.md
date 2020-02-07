@@ -55,6 +55,17 @@ The structure of the CDK code is similar to the application structure:
 2. There is an [`InfrastructureStack` class](lib/infrastructure-stack.ts)
   that models the Infrastructure Stack. It takes in the Lambda to subscribe to the
   SNS Topic that it creates as an input parameter.
+3. There is a [`CodePipelineStack` class](lib/codepipeline-stack.ts)
+  that models the release Pipeline. It takes advantage of the fact that
+  you can customize the `LambdaStack`s code,
+  and passes there a `CfnParametersCode` which will be filled by the
+  results of building the Lambda's code using CodeBuild in the Pipeline.
+
+Most of the magic happens in the entrypoint to the CDK program,
+[bin/app.ts](bin/app.ts).
+There, we first instantiate `LambdaStack` and `InfrastructureStack` for local development purposes,
+and then we instantiate the "production" `LambdaStack` and `InfrastructureStack`
+that will be deployed using CodePipeline.
 
 # Local development
 
@@ -70,3 +81,39 @@ This will deploy first the test `InfrastructureStack`,
 and then the test `LambdaStack`
 (the CDK tracks the dependency between the Stacks,
 and deploys them in the correct order).
+
+You can test the Lambda works from the AWS Console -
+you can send test events to the Function,
+or publish messages to the Topic.
+
+To clean up the test Stacks, execute:
+
+```shell script
+$ npm run cdk destroy TestInfraStack
+```
+
+(this will remove both the Lambda and Infrastructure Stacks,
+again thanks to CDK tracking dependencies between Stacks)
+
+# Production deployment
+
+To start the "production" deployment,
+you need to deploy the CodePipeline stack:
+
+**Note**: you might have to change 2 things in the code of `CodePipelineStack` before deploying it:
+
+1. I use a GitHub token stored in AWS SecretsManager called `my-github-token`.
+  Feel free to adjust to however you're storing credentials in your account.
+2. The source action points into this repository,
+  `skinny85/cdk-codepipeline-and-local-lambda-guidance`.
+  If you don't have write access to it,
+  CodePipeline will fail to create a webhook for it.
+  Feel free to fork this repo, and point `CodePipelineStack` to it,
+  or change to polling in the `GitHubSourceAction`: `trigger: codepipeline_actions.GitHubTrigger.POLL`.
+
+```shell script
+$ npm run cdk deploy ProdCodePipelineStack
+```
+
+Then, go to the AWS Console for CodePipeline,
+and you should be able to see the Pipeline called `ProdCdkCodePipelineForLocalLambdaDevGuidance`.
