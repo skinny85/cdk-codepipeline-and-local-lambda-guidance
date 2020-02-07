@@ -19,8 +19,8 @@ The application is divided into the following CloudFormation Stacks:
   (to illustrate building non-trivial Lambdas).
   The Lambda is updated using CodeDeploy's blue-green support.
   The Lambda itself is trivial, just prints out the current time in the PST timezone,
-  bit it should be enough for our example.
-2. The Infrastructure Stack. For this example, this consists of a single SNS Topic
+  but it should be enough for our example.
+2. The Infrastructure Stack. For this example, it consists of a single SNS Topic
   that subscribes a Lambda from the Lambda Stack to it.
   Because of this, the Infrastructure Stack is a dependency of the Lambda Stack
   (it must be deployed before it).
@@ -86,19 +86,21 @@ You can test the Lambda works from the AWS Console -
 you can send test events to the Function,
 or publish messages to the Topic.
 
+## Cleanup
+
 To clean up the test Stacks, execute:
 
 ```shell script
 $ npm run cdk destroy TestInfraStack
 ```
 
-(this will remove both the Lambda and Infrastructure Stacks,
+(this will remove both test Lambda and Infrastructure Stacks,
 again thanks to CDK tracking dependencies between Stacks)
 
 # Production deployment
 
 To start the "production" deployment,
-you need to deploy the CodePipeline stack:
+you need to deploy the CodePipeline stack.
 
 **Note**: you might have to change 2 things in the code of `CodePipelineStack` before deploying it:
 
@@ -111,9 +113,26 @@ you need to deploy the CodePipeline stack:
   Feel free to fork this repo, and point `CodePipelineStack` to it,
   or change to polling in the `GitHubSourceAction`: `trigger: codepipeline_actions.GitHubTrigger.POLL`.
 
+After those changes, execute
+(with AWS credentials in the console, of course):
+
 ```shell script
 $ npm run cdk deploy ProdCodePipelineStack
 ```
 
 Then, go to the AWS Console for CodePipeline,
 and you should be able to see the Pipeline called `ProdCdkCodePipelineForLocalLambdaDevGuidance`.
+The Pipeline should be green, and deploying all required Stacks.
+
+Any push to the repository that the CodePipeline is set to observe in the source Action
+will trigger a full build, and update -
+both a change in the CDK code, and in the Lambda code.
+
+## Cleanup
+
+To clean up after the "production" deployment,
+got to the CloudFormation AWS Console,
+and delete the Stack `ProdLambdaStack`, then `ProdInfraStack`,
+and finally `ProdCodePipelineStack`.
+Then, go to the S3 Console, and delete the CodePipeline Bucket -
+it will be called something like `prodcodepipelinestack-pipelineartifactsbucket2224-1g2cehg10j23w`.
