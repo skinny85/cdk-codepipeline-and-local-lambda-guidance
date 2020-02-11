@@ -1,6 +1,7 @@
 import * as codebuild from '@aws-cdk/aws-codebuild';
 import * as codepipeline from '@aws-cdk/aws-codepipeline';
 import * as codepipeline_actions from '@aws-cdk/aws-codepipeline-actions';
+import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as cdk from '@aws-cdk/core';
 
@@ -15,6 +16,12 @@ export class CodePipelineStack extends cdk.Stack {
     const sourceOutput = new codepipeline.Artifact();
     const cdkBuildOutput = new codepipeline.Artifact('CdkBuildOutput');
     const lambdaBuildOutput = new codepipeline.Artifact('LambdaBuildOutput');
+
+    const cfnActionRole = iam.Role.fromRoleArn(this, 'CfnActionRole',
+        'arn:aws:iam::828671620168:role/cdk-bootstrap-deploy-action-role-828671620168-us-west-2');
+    const cfnExecRole = iam.Role.fromRoleArn(this, 'CfnExecRole',
+        'arn:aws:iam::828671620168:role/cdk-bootstrap-cfn-exec-role-828671620168-us-west-2');
+
     new codepipeline.Pipeline(this, 'Pipeline', {
       pipelineName: 'ProdCdkCodePipelineForLocalLambdaDevGuidance',
       stages: [
@@ -83,6 +90,8 @@ export class CodePipelineStack extends cdk.Stack {
               templatePath: cdkBuildOutput.atPath('ProdInfraStack.template.json'),
               stackName: 'ProdInfraStack',
               adminPermissions: true,
+              role: cfnActionRole,
+              deploymentRole: cfnExecRole,
             }),
             // then, deploy the Lambda Stack
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
@@ -90,6 +99,8 @@ export class CodePipelineStack extends cdk.Stack {
               templatePath: cdkBuildOutput.atPath('ProdLambdaStack.template.json'),
               stackName: 'ProdLambdaStack',
               adminPermissions: true,
+              role: cfnActionRole,
+              deploymentRole: cfnExecRole,
               parameterOverrides: {
                 ...props.lambdaCode.assign(lambdaBuildOutput.s3Location),
               },
