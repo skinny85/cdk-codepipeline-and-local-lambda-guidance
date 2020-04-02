@@ -1,7 +1,7 @@
 This is an example [CDK](https://github.com/aws/aws-cdk)
 project that demonstrates working with Lambda functions.
 You can think of it as an extension of the
-[Lambda-CodePipeline example from the official AWS docs](https://docs.aws.amazon.com/de_de/cdk/latest/guide/codepipeline_example.html)
+[Lambda-CodePipeline example from the official AWS docs](https://docs.aws.amazon.com/cdk/latest/guide/codepipeline_example.html)
 to a more realistic (and thus a little more complicated, and longer) scenario.
 
 # Installation
@@ -15,10 +15,10 @@ make sure you also run `npm install` in that directory.
 
 The application is divided into the following CloudFormation Stacks:
 
-1. A Lambda Stack. The Lambda is a NodeJS Lambda with a single dependency
+1. A Lambda Stack. The Lambda is a NodeJS function with two dependencies on NPM packages
   (to illustrate building non-trivial Lambdas).
-  The Lambda is updated using CodeDeploy's blue-green support.
-  The Lambda itself is trivial, just prints out the current time in the PST timezone,
+  The function is updated using CodeDeploy's blue-green support.
+  The Lambda itself is extremely simple, just prints out the current time in the PST timezone,
   but it should be enough for our example.
 2. The Infrastructure Stack. For this example, it consists of a single SNS Topic
   that subscribes a Lambda from the Lambda Stack to it.
